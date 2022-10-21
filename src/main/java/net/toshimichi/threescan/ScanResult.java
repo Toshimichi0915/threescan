@@ -12,4 +12,5 @@ public class ScanResult {
     private final int maxPlayerCount;
     private final List<String> onlinePlayers;
     private final String motd;
+    private final ServerType serverType;
 }

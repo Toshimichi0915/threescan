@@ -7,7 +7,9 @@ import java.io.IOException;
 
 @Getter
 @AllArgsConstructor
-public class C2SStatusPacket implements C2SPacket {
+public class C2SLoginPacket implements C2SPacket {
+
+    private String name;
 
     @Override
     public int getId() {
@@ -16,6 +18,6 @@ public class C2SStatusPacket implements C2SPacket {
 
     @Override
     public void write(PacketOutputStream out) throws IOException {
-
+        out.writeString(name);
     }
 }

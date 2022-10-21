@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 public class PacketOutputStream extends OutputStream {
@@ -37,9 +38,34 @@ public class PacketOutputStream extends OutputStream {
         write(bytes);
     }
 
+    public void writeBoolean(boolean value) throws IOException {
+        write(value ? 1 : 0);
+    }
+
+    public void writeLong(long value) throws IOException {
+        write((int) (value >> 56));
+        write((int) (value >> 48));
+        write((int) (value >> 40));
+        write((int) (value >> 32));
+        write((int) (value >> 24));
+        write((int) (value >> 16));
+        write((int) (value >> 8));
+        write((int) value);
+    }
+
     public void writeUnsignedShort(int value) throws IOException {
         write(value >> 8);
         write(value);
+    }
+
+    public void writeUUID(UUID value) throws IOException {
+        writeLong(value.getMostSignificantBits());
+        writeLong(value.getLeastSignificantBits());
+    }
+
+    public void writeBytes(byte[] bytes) throws IOException {
+        writeVarInt(bytes.length);
+        write(bytes);
     }
 
     public void writePacket(C2SPacket packet) throws IOException {
