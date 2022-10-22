@@ -74,29 +74,33 @@ public class ExecutorScanner implements Scanner {
             S2CStatusPacket statusPacket = new S2CStatusPacket();
             in.readPacket(statusPacket);
 
-            JsonObject obj = gson.fromJson(statusPacket.getMessage(), JsonObject.class);
-            version = obj.getAsJsonObject("version").get("name").getAsString();
-            protocol = obj.getAsJsonObject("version").get("protocol").getAsInt();
-            playerCount = obj.getAsJsonObject("players").get("online").getAsInt();
-            maxPlayerCount = obj.getAsJsonObject("players").get("max").getAsInt();
-            onlinePlayers = new ArrayList<>();
-            JsonArray sample = obj.getAsJsonObject("players").getAsJsonArray("sample");
-            if (sample != null) {
-                for (JsonElement element : sample) {
-                    onlinePlayers.add(element.getAsJsonObject().get("name").getAsString());
+            try {
+                JsonObject obj = gson.fromJson(statusPacket.getMessage(), JsonObject.class);
+                version = obj.getAsJsonObject("version").get("name").getAsString();
+                protocol = obj.getAsJsonObject("version").get("protocol").getAsInt();
+                playerCount = obj.getAsJsonObject("players").get("online").getAsInt();
+                maxPlayerCount = obj.getAsJsonObject("players").get("max").getAsInt();
+                onlinePlayers = new ArrayList<>();
+                JsonArray sample = obj.getAsJsonObject("players").getAsJsonArray("sample");
+                if (sample != null) {
+                    for (JsonElement element : sample) {
+                        onlinePlayers.add(element.getAsJsonObject().get("name").getAsString());
+                    }
                 }
-            }
 
-            JsonElement description = obj.get("description");
-            if (description.isJsonObject()) {
-                JsonObject desc = description.getAsJsonObject();
-                if (desc.has("extra")) {
-                    motd = parseComponent(desc.getAsJsonArray("extra"));
+                JsonElement description = obj.get("description");
+                if (description.isJsonObject()) {
+                    JsonObject desc = description.getAsJsonObject();
+                    if (desc.has("extra")) {
+                        motd = parseComponent(desc.getAsJsonArray("extra"));
+                    } else {
+                        motd = desc.get("text").getAsString();
+                    }
                 } else {
-                    motd = desc.get("text").getAsString();
+                    motd = description.getAsString();
                 }
-            } else {
-                motd = description.getAsString();
+            } catch (Exception e) {
+                throw new InvalidStatusException(statusPacket.getMessage());
             }
         }
 
@@ -176,7 +180,10 @@ public class ExecutorScanner implements Scanner {
             executor.submit(() -> {
                 try {
                     ScanResult result = scan(host, port);
+                    if (result == null) return;
                     handler.handle(host, port, result);
+                } catch (InvalidStatusException e) {
+                    System.err.println("Failed to parse server status: " + e.getMessage() + " while scanning " + host + ":" + port);
                 } catch (IOException e) {
                     // ignore
                 } catch (Exception e) {
@@ -192,5 +199,12 @@ public class ExecutorScanner implements Scanner {
     public void shutdown() {
         executor.shutdown();
         executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS);
+    }
+
+    private static class InvalidStatusException extends IOException {
+
+        public InvalidStatusException(String message) {
+            super(message);
+        }
     }
 }
