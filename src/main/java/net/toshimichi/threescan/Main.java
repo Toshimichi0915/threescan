@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -23,7 +24,10 @@ public class Main {
         int portEnd = Integer.parseInt(args[2]);
 
         ScanTargetResolver targetResolver;
-        if (args[0].contains("-")) {
+        if (args[0].startsWith("masscan:")) {
+            String path = args[0].replaceFirst("masscan:", "");
+            targetResolver = new MasscanTargetResolver(Path.of(path));
+        } else if (args[0].contains("-")) {
             String[] split = args[0].split("-");
             targetResolver = new MultiScanTargetResolver(split[0], split[1], portStart, portEnd);
         } else if (args[0].contains("/")) {
