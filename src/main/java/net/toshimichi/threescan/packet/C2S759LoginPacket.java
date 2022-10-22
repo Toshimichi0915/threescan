@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.io.IOException;
-import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
@@ -16,7 +15,7 @@ public class C2S759LoginPacket implements C2SPacket {
     private byte[] publicKey;
     private byte[] signature;
 
-    public C2S759LoginPacket(String name, UUID uuid) {
+    public C2S759LoginPacket(String name) {
         this(name, false, 0, new byte[0], new byte[0]);
     }
 

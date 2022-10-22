@@ -109,7 +109,7 @@ public class ExecutorScanner implements Scanner {
                     if (protocol == 760) {
                         out.writePacket(new C2S760LoginPacket(NAME, UNIQUE_ID));
                     } else {
-                        out.writePacket(new C2S759LoginPacket(NAME, UNIQUE_ID));
+                        out.writePacket(new C2S759LoginPacket(NAME));
                     }
                     packets = Map.of(
                             0x00, new S2CLoginDisconnectPacket(),
