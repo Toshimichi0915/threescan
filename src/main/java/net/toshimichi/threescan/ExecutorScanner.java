@@ -22,6 +22,7 @@ import net.toshimichi.threescan.packet.S2CPacket;
 import net.toshimichi.threescan.packet.S2CStatusPacket;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Map;
@@ -59,8 +60,10 @@ public class ExecutorScanner implements Scanner {
         String motd;
         ServerType serverType;
 
-        try (Socket socket = new Socket(host, port)) {
+        try (Socket socket = new Socket()) {
             socket.setSoTimeout(timeout);
+            socket.connect(new InetSocketAddress(host, port), timeout);
+
             PacketInputStream in = new PacketInputStream(socket.getInputStream());
             PacketOutputStream out = new PacketOutputStream(socket.getOutputStream());
 
@@ -98,8 +101,10 @@ public class ExecutorScanner implements Scanner {
         }
 
         if (serverCheck) {
-            try (Socket socket = new Socket(host, port)) {
+            try (Socket socket = new Socket()) {
                 socket.setSoTimeout(timeout);
+                socket.connect(new InetSocketAddress(host, port), timeout);
+
                 PacketInputStream in = new PacketInputStream(socket.getInputStream());
                 PacketOutputStream out = new PacketOutputStream(socket.getOutputStream());
 
