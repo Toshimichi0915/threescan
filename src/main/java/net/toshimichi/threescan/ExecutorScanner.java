@@ -26,7 +26,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -36,7 +36,8 @@ public class ExecutorScanner implements Scanner {
     private static final String NAME = "Hiyokomame0144";
     private static final UUID UNIQUE_ID = UUID.fromString("1bd678d3-037c-4c21-9865-8d60ad282c57");
     private static final Gson gson = new Gson();
-    private final ExecutorService executorService;
+    private final ThreadPoolExecutor executor;
+    private final int queueSize;
     private final int timeout;
     private final boolean serverCheck;
 
@@ -48,7 +49,7 @@ public class ExecutorScanner implements Scanner {
         return builder.toString();
     }
 
-    public ScanResult scan(ScanRequest request, int port) throws IOException {
+    public ScanResult scan(String host, int port) throws IOException {
 
         String version;
         int protocol;
@@ -58,13 +59,13 @@ public class ExecutorScanner implements Scanner {
         String motd;
         ServerType serverType;
 
-        try (Socket socket = new Socket(request.getHost(), port)) {
+        try (Socket socket = new Socket(host, port)) {
             socket.setSoTimeout(timeout);
             PacketInputStream in = new PacketInputStream(socket.getInputStream());
             PacketOutputStream out = new PacketOutputStream(socket.getOutputStream());
 
             // handshake
-            out.writePacket(new C2SHandshakePacket(760, request.getHost(), port, 1));
+            out.writePacket(new C2SHandshakePacket(760, host, port, 1));
             out.writePacket(new C2SStatusPacket());
 
             S2CStatusPacket statusPacket = new S2CStatusPacket();
@@ -97,12 +98,12 @@ public class ExecutorScanner implements Scanner {
         }
 
         if (serverCheck) {
-            try (Socket socket = new Socket(request.getHost(), port)) {
+            try (Socket socket = new Socket(host, port)) {
                 socket.setSoTimeout(timeout);
                 PacketInputStream in = new PacketInputStream(socket.getInputStream());
                 PacketOutputStream out = new PacketOutputStream(socket.getOutputStream());
 
-                out.writePacket(new C2SHandshakePacket(protocol, request.getHost(), port, 2));
+                out.writePacket(new C2SHandshakePacket(protocol, host, port, 2));
                 Map<Integer, S2CPacket> packets;
                 if (protocol >= 759) {
                     if (protocol == 760) {
@@ -139,7 +140,7 @@ public class ExecutorScanner implements Scanner {
                     } else if (dp.getReason().contains("Unable to authenticate")) {
                         serverType = ServerType.VELOCITY;
                     } else {
-                        System.err.println("Could not determine server type: " + dp.getReason() + " while scanning " + request.getHost() + ":" + port);
+                        System.err.println("Could not determine server type: " + dp.getReason() + " while scanning " + host + ":" + port);
                         serverType = ServerType.UNKNOWN;
                     }
                 } else if (packet instanceof S2CEncryptionRequestPacket) {
@@ -155,18 +156,26 @@ public class ExecutorScanner implements Scanner {
         return new ScanResult(version, playerCount, maxPlayerCount, onlinePlayers, motd, serverType);
     }
 
+    @SneakyThrows
     @Override
-    public void scan(ScanRequest request, ScanHandler handler) {
-        for (int port = request.getPortStart(); port <= request.getPortEnd(); port++) {
-            int fport = port;
-            executorService.submit(() -> {
+    public void scan(ScanTargetResolver resolver, ScanHandler handler) {
+        ScanTarget target;
+        while ((target = resolver.next()) != null) {
+            String host = target.getHost();
+            int port = target.getPort();
+
+            while (executor.getQueue().size() >= queueSize) {
+                Thread.sleep(100);
+            }
+
+            executor.submit(() -> {
                 try {
-                    ScanResult result = scan(request, fport);
-                    handler.handle(request, fport, result);
+                    ScanResult result = scan(host, port);
+                    handler.handle(host, port, result);
                 } catch (IOException e) {
                     // ignore
                 } catch (Exception e) {
-                    System.err.println("Encountered an unexpected exception while scanning " + request.getHost() + ":" + fport);
+                    System.err.println("Encountered an unexpected exception while scanning " + host + ":" + port);
                     e.printStackTrace();
                 }
             });
@@ -176,7 +185,7 @@ public class ExecutorScanner implements Scanner {
     @SneakyThrows
     @Override
     public void shutdown() {
-        executorService.shutdown();
-        executorService.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS);
+        executor.shutdown();
+        executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS);
     }
 }

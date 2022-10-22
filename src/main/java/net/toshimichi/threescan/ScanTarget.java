@@ -3,9 +3,8 @@ package net.toshimichi.threescan;
 import lombok.Data;
 
 @Data
-public class ScanRequest {
+public class ScanTarget {
 
     private final String host;
-    private final int portStart;
-    private final int portEnd;
+    private final int port;
 }

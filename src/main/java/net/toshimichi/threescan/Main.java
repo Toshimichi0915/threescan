@@ -5,7 +5,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.util.Map;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
 
@@ -17,21 +19,33 @@ public class Main {
             return;
         }
 
-        String host = args[0];
         int portStart = Integer.parseInt(args[1]);
         int portEnd = Integer.parseInt(args[2]);
-        ScanRequest request = new ScanRequest(host, portStart, portEnd);
+
+        ScanTargetResolver targetResolver;
+        if (args[0].contains("-")) {
+            String[] split = args[0].split("-");
+            targetResolver = new MultiScanTargetResolver(split[0], split[1], portStart, portEnd);
+        } else if (args[0].contains("/")) {
+            String[] split = args[0].split("/");
+            targetResolver = new MultiScanTargetResolver(split[0], Integer.parseInt(split[1]), portStart, portEnd);
+        } else {
+            String host = args[0];
+            targetResolver = new SingleScanTargetResolver(host, portStart, portEnd);
+        }
 
         int timeout = Integer.parseInt(args[3]);
         int thread = Integer.parseInt(args[4]);
-        ExecutorScanner scanner = new ExecutorScanner(Executors.newFixedThreadPool(thread), timeout, true);
-        scanner.scan(request, Main::showResult);
+        int capacity = thread * 2;
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(thread, thread, Integer.MAX_VALUE, TimeUnit.DAYS, new ArrayBlockingQueue<>(capacity));
+        ExecutorScanner scanner = new ExecutorScanner(executor, capacity, timeout, true);
+        scanner.scan(targetResolver, Main::showResult);
         scanner.shutdown();
     }
 
-    public static void showResult(ScanRequest request, int port, ScanResult result) {
+    public static void showResult(String host, int port, ScanResult result) {
         JsonObject obj = new JsonObject();
-        obj.addProperty("host", request.getHost());
+        obj.addProperty("host", host);
         obj.addProperty("port", port);
 
         // merge data
