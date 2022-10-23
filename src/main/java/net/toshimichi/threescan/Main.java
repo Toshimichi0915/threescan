@@ -26,13 +26,16 @@ public class Main {
         ScanTargetResolver targetResolver;
         if (args[0].startsWith("masscan:")) {
             String path = args[0].replaceFirst("masscan:", "");
-            targetResolver = new MasscanTargetResolver(Path.of(path));
+            targetResolver = new MasscanScanTargetResolver(Path.of(path));
+        } else if (args[0].startsWith("file:")) {
+            String path = args[0].replaceFirst("file:", "");
+            targetResolver = new MultiScanTargetResolver(Path.of(path), portStart, portEnd);
         } else if (args[0].contains("-")) {
             String[] split = args[0].split("-");
-            targetResolver = new MultiScanTargetResolver(split[0], split[1], portStart, portEnd);
+            targetResolver = new RangeScanTargetResolver(split[0], split[1], portStart, portEnd);
         } else if (args[0].contains("/")) {
             String[] split = args[0].split("/");
-            targetResolver = new MultiScanTargetResolver(split[0], Integer.parseInt(split[1]), portStart, portEnd);
+            targetResolver = new RangeScanTargetResolver(split[0], Integer.parseInt(split[1]), portStart, portEnd);
         } else {
             String host = args[0];
             targetResolver = new SingleScanTargetResolver(host, portStart, portEnd);

@@ -5,12 +5,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-public class MasscanTargetResolver implements ScanTargetResolver {
+public class MasscanScanTargetResolver implements ScanTargetResolver {
 
     private final List<ScanTarget> targets;
     private int index;
 
-    public MasscanTargetResolver(Path path) throws IOException {
+    public MasscanScanTargetResolver(Path path) throws IOException {
         targets = Files.readAllLines(path).stream()
                 .filter(it -> !it.startsWith("#"))
                 .map(it -> it.split(" "))
