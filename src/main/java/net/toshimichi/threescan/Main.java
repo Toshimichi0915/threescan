@@ -4,49 +4,52 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 public class Main {
 
     private static final Gson gson = new Gson();
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 5) {
-            System.err.println("Usage: java -jar threescan.jar <host> <portStart> <portEnd> <timeout> <thread>");
+        if (args.length != 4) {
+            System.err.println("Usage: java -jar threescan.jar <type> <file/stdin> <timeout> <thread>");
             return;
         }
 
-        int portStart = Integer.parseInt(args[1]);
-        int portEnd = Integer.parseInt(args[2]);
+        Map<String, Function<BufferedReader, ScanTargetResolver>> resolvers = Map.of(
+                "simple", SimpleScanTargetResolver::new,
+                "range", RangeScanTargetResolver::new,
+                "masscan", MasscanScanTargetResolver::new
+        );
 
-        ScanTargetResolver targetResolver;
-        if (args[0].startsWith("masscan:")) {
-            String path = args[0].replaceFirst("masscan:", "");
-            targetResolver = new MasscanScanTargetResolver(Path.of(path));
-        } else if (args[0].startsWith("file:")) {
-            String path = args[0].replaceFirst("file:", "");
-            targetResolver = new MultiScanTargetResolver(Path.of(path), portStart, portEnd);
-        } else if (args[0].contains("-")) {
-            String[] split = args[0].split("-");
-            targetResolver = new RangeScanTargetResolver(split[0], split[1], portStart, portEnd);
-        } else if (args[0].contains("/")) {
-            String[] split = args[0].split("/");
-            targetResolver = new RangeScanTargetResolver(split[0], Integer.parseInt(split[1]), portStart, portEnd);
-        } else {
-            String host = args[0];
-            targetResolver = new SingleScanTargetResolver(host, portStart, portEnd);
+        if (!resolvers.containsKey(args[0])) {
+            System.err.println("Unknown type: " + args[0]);
+            return;
         }
 
-        int timeout = Integer.parseInt(args[3]);
-        int thread = Integer.parseInt(args[4]);
+        BufferedReader reader;
+        if (args[1].equals("stdin")) {
+            reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
+        } else {
+            reader = Files.newBufferedReader(Path.of(args[1]));
+        }
+
+        ScanTargetResolver resolver = resolvers.get(args[0]).apply(reader);
+        int timeout = Integer.parseInt(args[2]);
+        int thread = Integer.parseInt(args[3]);
         int capacity = thread * 2;
         ThreadPoolExecutor executor = new ThreadPoolExecutor(thread, thread, Integer.MAX_VALUE, TimeUnit.DAYS, new ArrayBlockingQueue<>(capacity));
         ExecutorScanner scanner = new ExecutorScanner(executor, capacity, timeout, true);
-        scanner.scan(targetResolver, Main::showResult);
+        scanner.scan(resolver, Main::showResult);
         scanner.shutdown();
     }
 
