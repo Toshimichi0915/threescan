@@ -12,13 +12,9 @@ public class MasscanScanTargetResolver implements ScanTargetResolver {
 
     @Override
     public ScanTarget next() throws IOException {
-        String line;
-        do {
-            line = reader.readLine();
-            if (line == null) return null;
-        } while (line.startsWith("#"));
-
+        String line = reader.readLine();
+        if (line == null) return null;
         String[] split = line.split(" ");
-        return new ScanTarget(split[3], Integer.parseInt(split[2]));
+        return new ScanTarget(split[5], Integer.parseInt(split[3].replaceAll("/.*", "")));
     }
 }
