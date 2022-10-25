@@ -12,8 +12,7 @@ Currently, there are 3 types: 'simple', 'range', 'masscan'.
 
 ### Simple
 
-This type is used to scan a single host. The IP address of the host is automatically resolved, so you can scan servers
-using TCPShield.
+This type is used to scan a single host.
 
 ```text
 <host> <portStart> <portEnd>
@@ -22,7 +21,7 @@ using TCPShield.
 
 ### Range
 
-This type is used to scan a range of hosts. This can't be used for scanning servers using TCPShield.
+This type is used to scan a range of hosts.
 
 ```text
 <CIDR> <portStart> <portEnd>
@@ -37,9 +36,9 @@ This type is used to scan a range of hosts. This can't be used for scanning serv
 
 ### Masscan
 
-This type is used to combine the program with Masscan. This can't be used for scanning servers using TCPShield.
+This type is used to combine the program with Masscan.
 
 ```text
-open tcp <port> <host>
-open tcp 25565 127.0.0.1 1000000000
+Discovered open port <port>/tcp on <ipv4>
+Discovered open port 25565/tcp on 127.0.0.1
 ```
