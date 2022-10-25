@@ -137,7 +137,7 @@ public class ExecutorScanner implements Scanner {
                 }
 
                 S2CPacket packet = in.readPacket((Function<Integer, S2CPacket>) packets::get);
-                if (packet instanceof S2C759LoginSuccessPacket || packet instanceof S2CCompressionPacket) {
+                if (packet instanceof S2C759LoginSuccessPacket || packet instanceof S2CLoginSuccessPacket || packet instanceof S2CCompressionPacket) {
                     serverType = ServerType.OFFLINE;
                 } else if (packet instanceof S2CLoginDisconnectPacket dp) {
                     if (dp.getReason().contains("IP forwarding")) {
