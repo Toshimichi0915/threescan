@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -20,8 +21,8 @@ public class Main {
     private static final Gson gson = new Gson();
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 4) {
-            System.err.println("Usage: java -jar threescan.jar <type> <file/stdin> <timeout> <thread>");
+        if (args.length < 4) {
+            System.err.println("Usage: java -jar threescan.jar <type> <file/stdin> <timeout> <thread> [name] [uniqueId]");
             return;
         }
 
@@ -47,8 +48,16 @@ public class Main {
         int timeout = Integer.parseInt(args[2]);
         int thread = Integer.parseInt(args[3]);
         int capacity = thread * 2;
+
+        String name = "Hiyokomame0144";
+        UUID uniqueId = UUID.fromString("1bd678d3-037c-4c21-9865-8d60ad282c57");
+        if (args.length > 5) {
+            name = args[4];
+            uniqueId = UUID.fromString(args[5]);
+        }
+
         ThreadPoolExecutor executor = new ThreadPoolExecutor(thread, thread, Integer.MAX_VALUE, TimeUnit.DAYS, new ArrayBlockingQueue<>(capacity));
-        ExecutorScanner scanner = new ExecutorScanner(executor, capacity, timeout, true);
+        ExecutorScanner scanner = new ExecutorScanner(executor, capacity, timeout, true, name, uniqueId);
         scanner.scan(resolver, Main::showResult);
         scanner.shutdown();
     }

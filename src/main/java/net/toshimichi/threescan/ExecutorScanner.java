@@ -34,13 +34,13 @@ import java.util.function.Function;
 @RequiredArgsConstructor
 public class ExecutorScanner implements Scanner {
 
-    private static final String NAME = "Hiyokomame0144";
-    private static final UUID UNIQUE_ID = UUID.fromString("1bd678d3-037c-4c21-9865-8d60ad282c57");
     private static final Gson gson = new Gson();
     private final ThreadPoolExecutor executor;
     private final int queueSize;
     private final int timeout;
     private final boolean serverCheck;
+    private final String name;
+    private final UUID uniqueId;
 
     public String parseComponent(JsonArray array) {
         StringBuilder builder = new StringBuilder();
@@ -116,9 +116,9 @@ public class ExecutorScanner implements Scanner {
                 Map<Integer, S2CPacket> packets;
                 if (protocol >= 759) {
                     if (protocol == 760) {
-                        out.writePacket(new C2S760LoginPacket(NAME, UNIQUE_ID));
+                        out.writePacket(new C2S760LoginPacket(name, uniqueId));
                     } else {
-                        out.writePacket(new C2S759LoginPacket(NAME));
+                        out.writePacket(new C2S759LoginPacket(name));
                     }
                     packets = Map.of(
                             0x00, new S2CLoginDisconnectPacket(),
@@ -127,7 +127,7 @@ public class ExecutorScanner implements Scanner {
                             0x03, new S2CCompressionPacket()
                     );
                 } else {
-                    out.writePacket(new C2SLoginPacket(NAME));
+                    out.writePacket(new C2SLoginPacket(name));
                     packets = Map.of(
                             0x00, new S2CLoginDisconnectPacket(),
                             0x01, new S2CEncryptionRequestPacket(),
