@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import net.toshimichi.threescan.packet.C2S759LoginPacket;
 import net.toshimichi.threescan.packet.C2S760LoginPacket;
+import net.toshimichi.threescan.packet.C2S761LoginPacket;
 import net.toshimichi.threescan.packet.C2SHandshakePacket;
 import net.toshimichi.threescan.packet.C2SLoginPacket;
 import net.toshimichi.threescan.packet.C2SStatusPacket;
@@ -115,7 +116,9 @@ public class ExecutorScanner implements Scanner {
                 out.writePacket(new C2SHandshakePacket(protocol, host, port, 2));
                 Map<Integer, S2CPacket> packets;
                 if (protocol >= 759) {
-                    if (protocol == 760) {
+                    if (protocol >= 761) {
+                        out.writePacket(new C2S761LoginPacket(name, uniqueId));
+                    } else if (protocol == 760) {
                         out.writePacket(new C2S760LoginPacket(name, uniqueId));
                     } else {
                         out.writePacket(new C2S759LoginPacket(name));
