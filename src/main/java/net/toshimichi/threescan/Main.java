@@ -21,8 +21,8 @@ public class Main {
     private static final Gson gson = new Gson();
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 4) {
-            System.err.println("Usage: java -jar threescan.jar <type> <file/stdin> <timeout> <thread> [name] [uniqueId]");
+        if (args.length != 5) {
+            System.err.println("Usage: java -jar threescan.jar <type> <timeout> <thread> <name> <uniqueId>");
             return;
         }
 
@@ -37,24 +37,15 @@ public class Main {
             return;
         }
 
-        BufferedReader reader;
-        if (args[1].equals("stdin")) {
-            reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
-        } else {
-            reader = Files.newBufferedReader(Path.of(args[1]));
-        }
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
 
         ScanTargetResolver resolver = resolvers.get(args[0]).apply(reader);
-        int timeout = Integer.parseInt(args[2]);
-        int thread = Integer.parseInt(args[3]);
+        int timeout = Integer.parseInt(args[1]);
+        int thread = Integer.parseInt(args[2]);
         int capacity = thread * 2;
 
-        String name = "Hiyokomame0144";
-        UUID uniqueId = UUID.fromString("1bd678d3-037c-4c21-9865-8d60ad282c57");
-        if (args.length > 5) {
-            name = args[4];
-            uniqueId = UUID.fromString(args[5]);
-        }
+        String name = args[3];
+        UUID uniqueId = UUID.fromString(args[4]);
 
         ThreadPoolExecutor executor = new ThreadPoolExecutor(thread, thread, Integer.MAX_VALUE, TimeUnit.DAYS, new ArrayBlockingQueue<>(capacity));
         ExecutorScanner scanner = new ExecutorScanner(executor, capacity, timeout, true, name, uniqueId);
