@@ -144,7 +144,7 @@ public class ExecutorScanner implements Scanner {
                     serverType = ServerType.OFFLINE;
                 } else if (packet instanceof S2CLoginDisconnectPacket dp) {
                     if (dp.getReason().contains("IP forwarding")) {
-                        serverType = ServerType.HACKABLE;
+                        serverType = ServerType.BUNGEECORD;
                     } else if (dp.getReason().contains("Forge")) {
                         serverType = ServerType.MODDED;
                     } else if (dp.getReason().contains("whitelisted")) {
