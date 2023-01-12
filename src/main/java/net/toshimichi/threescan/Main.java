@@ -27,7 +27,8 @@ public class Main {
         Map<String, Function<BufferedReader, ScanTargetResolver>> resolvers = Map.of(
                 "simple", SimpleScanTargetResolver::new,
                 "range", RangeScanTargetResolver::new,
-                "masscan", MasscanScanTargetResolver::new
+                "masscan", MasscanScanTargetResolver::new,
+                "threescan", ThreescanScanTargetResolver::new
         );
 
         if (!resolvers.containsKey(args[0])) {
