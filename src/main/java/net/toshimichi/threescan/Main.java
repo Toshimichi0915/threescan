@@ -7,8 +7,6 @@ import com.google.gson.JsonObject;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -21,8 +19,8 @@ public class Main {
     private static final Gson gson = new Gson();
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 5) {
-            System.err.println("Usage: java -jar threescan.jar <type> <timeout> <thread> <name> <uniqueId>");
+        if (args.length != 6) {
+            System.err.println("Usage: java -jar threescan.jar <type> <mode> <timeout> <thread> <name> <uniqueId>");
             return;
         }
 
@@ -38,17 +36,25 @@ public class Main {
         }
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
-
         ScanTargetResolver resolver = resolvers.get(args[0]).apply(reader);
-        int timeout = Integer.parseInt(args[1]);
-        int thread = Integer.parseInt(args[2]);
+
+        ScanMode scanMode;
+        try {
+            scanMode = ScanMode.valueOf(args[1].toUpperCase());
+        } catch (IllegalArgumentException e) {
+            System.err.println("Unknown mode: " + args[1]);
+            return;
+        }
+
+        int timeout = Integer.parseInt(args[2]);
+        int thread = Integer.parseInt(args[3]);
         int capacity = thread * 2;
 
-        String name = args[3];
-        UUID uniqueId = UUID.fromString(args[4]);
+        String name = args[4];
+        UUID uniqueId = UUID.fromString(args[5]);
 
         ThreadPoolExecutor executor = new ThreadPoolExecutor(thread, thread, Integer.MAX_VALUE, TimeUnit.DAYS, new ArrayBlockingQueue<>(capacity));
-        ExecutorScanner scanner = new ExecutorScanner(executor, capacity, timeout, true, name, uniqueId);
+        ExecutorScanner scanner = new ExecutorScanner(executor, scanMode, capacity, timeout, name, uniqueId);
         scanner.scan(resolver, Main::showResult);
         scanner.shutdown();
     }

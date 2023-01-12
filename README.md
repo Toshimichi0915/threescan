@@ -5,8 +5,10 @@ The most powerful Minecraft server scanner in the world.
 ## Usage
 
 ```bash
-java -jar threescan.jar <type> <timeout> <thread> <name> <uniqueId>
+java -jar threescan.jar <type> <mode> <timeout> <thread> <name> <uniqueId>
 ```
+
+## Types
 
 Currently, there are 3 types: "simple", "range", and "masscan".
 
@@ -42,3 +44,9 @@ This type is used to combine the program with Masscan.
 Discovered open port <port>/tcp on <ipv4>
 Discovered open port 25565/tcp on 127.0.0.1
 ```
+
+## Modes
+
+Currently, there are 2 modes: "fast" and "full".
+
+With full mode, additional packets are sent to determine server types. However, scans will be slower and a message will be shown to scanned hosts.

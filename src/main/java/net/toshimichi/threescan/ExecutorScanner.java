@@ -37,9 +37,9 @@ public class ExecutorScanner implements Scanner {
 
     private static final Gson gson = new Gson();
     private final ThreadPoolExecutor executor;
+    private final ScanMode scanMode;
     private final int queueSize;
     private final int timeout;
-    private final boolean serverCheck;
     private final String name;
     private final UUID uniqueId;
 
@@ -105,7 +105,7 @@ public class ExecutorScanner implements Scanner {
             }
         }
 
-        if (serverCheck) {
+        if (scanMode == ScanMode.FULL) {
             try (Socket socket = new Socket()) {
                 socket.setSoTimeout(timeout);
                 socket.connect(new InetSocketAddress(host, port), timeout);
