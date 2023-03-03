@@ -23,8 +23,18 @@ public class SimpleScanTargetResolver implements ScanTargetResolver {
 
             index = 0;
             host = split[0];
-            portStart = Integer.parseInt(split[1]);
-            portEnd = Integer.parseInt(split[2]);
+
+            if (split.length > 1) {
+                portStart = Integer.parseInt(split[1]);
+            } else {
+                portStart = 25565;
+            }
+
+            if (split.length > 2) {
+                portEnd = Integer.parseInt(split[2]);
+            } else {
+                portEnd = portStart;
+            }
         }
 
         return new ScanTarget(host, portStart + index++);

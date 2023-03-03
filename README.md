@@ -17,6 +17,10 @@ Currently, there are 4 types: "simple", "range", "masscan", and "threescan".
 This type is used to scan a single host.
 
 ```text
+<host>
+127.0.0.1
+<host> <port>
+127.0.0.1 25565
 <host> <portStart> <portEnd>
 127.0.0.1 25565 25565
 ```
