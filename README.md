@@ -5,7 +5,7 @@ The most powerful Minecraft server scanner in the world.
 ## Usage
 
 ```bash
-java -jar threescan.jar <type> <mode> <timeout> <thread> <name> <uniqueId>
+java -jar threescan.jar <type> <mode> <timeout> <rate> <name> <uniqueId>
 ```
 
 ## Types

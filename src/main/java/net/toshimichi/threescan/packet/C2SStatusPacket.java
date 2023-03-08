@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 @Getter
 @AllArgsConstructor
@@ -15,7 +16,7 @@ public class C2SStatusPacket implements C2SPacket {
     }
 
     @Override
-    public void write(PacketOutputStream out) throws IOException {
+    public void write(ByteBuffer buffer) throws IOException {
 
     }
 }

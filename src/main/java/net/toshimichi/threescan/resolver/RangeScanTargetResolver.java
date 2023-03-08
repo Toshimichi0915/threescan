@@ -1,6 +1,7 @@
-package net.toshimichi.threescan;
+package net.toshimichi.threescan.resolver;
 
 import lombok.RequiredArgsConstructor;
+import net.toshimichi.threescan.scanner.ScanTarget;
 
 import java.io.BufferedReader;
 import java.io.IOException;

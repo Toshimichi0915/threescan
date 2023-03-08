@@ -3,6 +3,7 @@ package net.toshimichi.threescan.packet;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
 @Getter
@@ -17,8 +18,8 @@ public class S2CLoginSuccessPacket implements S2CPacket {
     }
 
     @Override
-    public void read(PacketInputStream in) throws IOException {
-        uniqueId = in.readUUID();
-        username = in.readString();
+    public void read(ByteBuffer buffer) throws IOException {
+        uniqueId = Protocol.getUUID(buffer);
+        username = Protocol.getString(buffer);
     }
 }

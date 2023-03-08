@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 @Getter
 @AllArgsConstructor
@@ -20,10 +21,10 @@ public class C2SHandshakePacket implements C2SPacket {
     }
 
     @Override
-    public void write(PacketOutputStream out) throws IOException {
-        out.writeVarInt(version);
-        out.writeString(host);
-        out.writeUnsignedShort(port);
-        out.writeVarInt(nextState);
+    public void write(ByteBuffer buffer) throws IOException {
+        Protocol.putVarInt(buffer, version);
+        Protocol.putString(buffer, host);
+        Protocol.putUnsignedShort(buffer, port);
+        Protocol.putVarInt(buffer, nextState);
     }
 }

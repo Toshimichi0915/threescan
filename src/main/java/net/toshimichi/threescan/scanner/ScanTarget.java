@@ -1,4 +1,4 @@
-package net.toshimichi.threescan;
+package net.toshimichi.threescan.scanner;
 
 import lombok.Data;
 

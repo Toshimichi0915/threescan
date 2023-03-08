@@ -3,6 +3,7 @@ package net.toshimichi.threescan.packet;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 @Getter
 public class S2CCompressionPacket implements S2CPacket {
@@ -15,7 +16,7 @@ public class S2CCompressionPacket implements S2CPacket {
     }
 
     @Override
-    public void read(PacketInputStream in) throws IOException {
-        threshold = in.readVarInt();
+    public void read(ByteBuffer buffer) throws IOException {
+        threshold = Protocol.getVarInt(buffer);
     }
 }

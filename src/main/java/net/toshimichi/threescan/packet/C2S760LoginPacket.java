@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
 @Getter
@@ -28,18 +29,18 @@ public class C2S760LoginPacket implements C2SPacket {
     }
 
     @Override
-    public void write(PacketOutputStream out) throws IOException {
-        out.writeString(name);
-        out.writeBoolean(hasSigName);
+    public void write(ByteBuffer buffer) throws IOException {
+        Protocol.putString(buffer, name);
+        Protocol.putBoolean(buffer, hasSigName);
         if (hasSigName) {
-            out.writeLong(timestamp);
-            out.writeBytes(publicKey);
-            out.writeBytes(signature);
+            buffer.putLong(timestamp);
+            Protocol.putBytes(buffer, publicKey);
+            Protocol.putBytes(buffer, signature);
         }
 
-        out.writeBoolean(hasPlayerUniqueId);
+        Protocol.putBoolean(buffer, hasPlayerUniqueId);
         if (hasPlayerUniqueId) {
-            out.writeUUID(playerUniqueId);
+            Protocol.putUUID(buffer, playerUniqueId);
         }
     }
 }

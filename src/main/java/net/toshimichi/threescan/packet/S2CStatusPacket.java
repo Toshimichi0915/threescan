@@ -3,6 +3,7 @@ package net.toshimichi.threescan.packet;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 @Getter
 public class S2CStatusPacket implements S2CPacket {
@@ -15,7 +16,7 @@ public class S2CStatusPacket implements S2CPacket {
     }
 
     @Override
-    public void read(PacketInputStream in) throws IOException {
-        message = in.readString();
+    public void read(ByteBuffer buffer) throws IOException {
+        message = Protocol.getString(buffer);
     }
 }

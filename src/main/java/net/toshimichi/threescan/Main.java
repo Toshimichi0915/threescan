@@ -3,15 +3,23 @@ package net.toshimichi.threescan;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.toshimichi.threescan.resolver.MasscanScanTargetResolver;
+import net.toshimichi.threescan.resolver.RangeScanTargetResolver;
+import net.toshimichi.threescan.resolver.ScanTargetResolver;
+import net.toshimichi.threescan.resolver.SimpleScanTargetResolver;
+import net.toshimichi.threescan.resolver.ThreescanScanTargetResolver;
+import net.toshimichi.threescan.scanner.ChannelScanner;
+import net.toshimichi.threescan.scanner.MultiScanner;
+import net.toshimichi.threescan.scanner.RateLimitScanner;
+import net.toshimichi.threescan.scanner.ScanMode;
+import net.toshimichi.threescan.scanner.ScanPacketHandler;
+import net.toshimichi.threescan.scanner.ScanTarget;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class Main {
@@ -20,7 +28,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 6) {
-            System.err.println("Usage: java -jar threescan.jar <type> <mode> <timeout> <thread> <name> <uniqueId>");
+            System.err.println("Usage: java -jar threescan.jar <type> <mode> <timeout> <rate> <name> <uniqueId>");
             return;
         }
 
@@ -48,28 +56,34 @@ public class Main {
         }
 
         int timeout = Integer.parseInt(args[2]);
-        int thread = Integer.parseInt(args[3]);
-        int capacity = thread * 2;
+        int rate = Integer.parseInt(args[3]);
 
         String name = args[4];
         UUID uniqueId = UUID.fromString(args[5]);
 
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(thread, thread, Integer.MAX_VALUE, TimeUnit.DAYS, new ArrayBlockingQueue<>(capacity));
-        ExecutorScanner scanner = new ExecutorScanner(executor, scanMode, capacity, timeout, name, uniqueId);
-        scanner.scan(resolver, Main::showResult);
-        scanner.shutdown();
-    }
+        MultiScanner multiScanner = new MultiScanner(
+                () -> new ChannelScanner(timeout, timeout, new ScanPacketHandler(scanMode, Main::showResult, name, uniqueId))
+        );
 
-    public static void showResult(String host, int port, ScanResult result) {
-        JsonObject obj = new JsonObject();
-        obj.addProperty("host", host);
-        obj.addProperty("port", port);
+        RateLimitScanner rateLimitScanner = new RateLimitScanner(rate * 0.001, multiScanner);
+        rateLimitScanner.start();
 
-        // merge data
-        for (Map.Entry<String, JsonElement> entry : gson.toJsonTree(result).getAsJsonObject().entrySet()) {
-            obj.add(entry.getKey(), entry.getValue());
+        ScanTarget target;
+        while ((target = resolver.next()) != null) {
+            rateLimitScanner.scan(target);
         }
 
-        System.out.println(gson.toJson(obj));
+        rateLimitScanner.stop();
+    }
+
+    public static void showResult(ScanTarget target, ScanResult result) {
+        JsonObject targetObj = gson.toJsonTree(target).getAsJsonObject();
+        JsonObject resultObj = gson.toJsonTree(result).getAsJsonObject();
+
+        for (Map.Entry<String, JsonElement> entry : resultObj.entrySet()) {
+            targetObj.add(entry.getKey(), entry.getValue());
+        }
+
+        System.out.println(gson.toJson(targetObj));
     }
 }

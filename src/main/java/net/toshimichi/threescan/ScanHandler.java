@@ -1,7 +1,9 @@
 package net.toshimichi.threescan;
 
+import net.toshimichi.threescan.scanner.ScanTarget;
+
 @FunctionalInterface
 public interface ScanHandler {
 
-    void handle(String host, int port, ScanResult result);
+    void handle(ScanTarget target, ScanResult result);
 }

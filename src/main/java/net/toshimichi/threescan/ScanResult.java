@@ -1,16 +1,18 @@
 package net.toshimichi.threescan;
 
 import lombok.Data;
+import net.toshimichi.threescan.scanner.ServerType;
 
 import java.util.List;
 
 @Data
 public class ScanResult {
 
-    private final String version;
-    private final int playerCount;
-    private final int maxPlayerCount;
-    private final List<String> onlinePlayers;
-    private final String motd;
-    private final ServerType serverType;
+    private String version;
+    private int protocol;
+    private int playerCount;
+    private int maxPlayerCount;
+    private List<String> onlinePlayers;
+    private String description;
+    private ServerType serverType = ServerType.UNKNOWN;
 }

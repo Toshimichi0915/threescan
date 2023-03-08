@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 @Getter
 @AllArgsConstructor
@@ -17,7 +18,7 @@ public class C2SLoginPacket implements C2SPacket {
     }
 
     @Override
-    public void write(PacketOutputStream out) throws IOException {
-        out.writeString(name);
+    public void write(ByteBuffer buffer) throws IOException {
+        Protocol.putString(buffer, name);
     }
 }
