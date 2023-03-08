@@ -14,6 +14,7 @@ import net.toshimichi.threescan.packet.C2SHandshakePacket;
 import net.toshimichi.threescan.packet.C2SLoginPacket;
 import net.toshimichi.threescan.packet.C2SStatusPacket;
 import net.toshimichi.threescan.packet.S2CLoginDisconnectPacket;
+import net.toshimichi.threescan.packet.S2CLoginPluginRequestPacket;
 import net.toshimichi.threescan.packet.S2CStatusPacket;
 
 import java.io.IOException;
@@ -143,7 +144,7 @@ public class ScanPacketHandler implements PacketHandler {
         ScanTarget target = context.getScanTarget();
         ScanResult result = context.getScanResult();
         switch (data.getId()) {
-            case 0 -> {
+            case 0x00 -> {
                 S2CLoginDisconnectPacket packet = new S2CLoginDisconnectPacket();
                 packet.read(data.getBuffer());
                 if (packet.getReason().contains("IP forwarding")) {
@@ -159,13 +160,23 @@ public class ScanPacketHandler implements PacketHandler {
                     result.setServerType(ServerType.UNKNOWN);
                 }
             }
-            case 1 -> {
+            case 0x01 -> {
                 // S2CEncryptionRequestPacket
                 result.setServerType(ServerType.ONLINE);
             }
-            case 2, 3 -> {
+            case 0x02, 0x03 -> {
                 // S2CLoginSuccessPacket, S2CCompressionPacket
                 result.setServerType(ServerType.OFFLINE);
+            }
+            case 0x04 -> {
+                S2CLoginPluginRequestPacket packet = new S2CLoginPluginRequestPacket();
+                packet.read(data.getBuffer());
+                if (packet.getChannel().equals("velocity:player_info")) {
+                    result.setServerType(ServerType.VELOCITY);
+                } else {
+                    result.setServerType(ServerType.CUSTOM);
+                    System.err.println("Found unknown login plugin request: " + packet.getChannel() + " while scanning " + target.getHost() + ":" + target.getPort());
+                }
             }
             default -> {
                 throw new IOException("Illegal packet ID: " + data.getId());
