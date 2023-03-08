@@ -55,7 +55,7 @@ public class ChannelScanner implements Scanner, Runnable {
 
     @Override
     public void stop() throws InterruptedException {
-        thread.interrupt();
+        stopped = true;
         thread.join();
     }
 
