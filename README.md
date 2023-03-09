@@ -8,6 +8,21 @@ The most powerful Minecraft server scanner in the world.
 java -jar threescan.jar <type> <mode> <timeout> <rate> <name> <uniqueId>
 ```
 
+where
+
+* type - the type of scan (simple, range, masscan, threescan)
+* mode - the mode of scan (fast, full)
+* timeout - the timeout of scan (in milliseconds)
+* rate - the rate of scan (scan per second)
+* name - the name of a player (used to determine server type)
+* uniqueId - the uniqueId of a player (used to determine server type)
+
+## Features
+
+* zero memory copy
+* asynchronous I/O
+* ability to determine server type
+
 ## Types
 
 Currently, there are 4 types: "simple", "range", "masscan", and "threescan".
@@ -51,7 +66,7 @@ Discovered open port 25565/tcp on 127.0.0.1
 
 ### Threescan
 
-This type is used to recheck scan results of threescan.
+This type is used to recheck the scan results of threescan.
 
 ```text
 {"host":"<host>", "port":<port>, ...}
