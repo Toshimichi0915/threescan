@@ -72,10 +72,12 @@ public class RateLimitScanner implements Scanner, Runnable {
                 synchronized (queue) {
                     o = queue.poll();
                 }
-                if (o instanceof ScanTarget) {
-                    scanner.scan((ScanTarget) o);
-                } else if (o instanceof ScanContext) {
-                    scanner.scan((ScanContext) o);
+                if (o == null) {
+                    break;
+                } else if (o instanceof ScanTarget target) {
+                    scanner.scan(target);
+                } else if (o instanceof ScanContext context) {
+                    scanner.scan(context);
                 }
                 limit--;
             }
