@@ -19,7 +19,7 @@ public class ChannelScanner implements Scanner, Runnable {
     private final int readTimeout;
     private final PacketHandler packetHandler;
 
-    private final BufferPool readBufferPool = new BufferPool(8192);
+    private final BufferPool readBufferPool = new BufferPool(16384);
     private final BufferPool writeBufferPool = new BufferPool(1024);
     private final BufferPool tempBufferPool = new BufferPool(16);
     private final ArrayDeque<ScanContext> queue = new ArrayDeque<>();
