@@ -73,7 +73,7 @@ public class ChannelScanner implements Scanner, Runnable {
     @Override
     public void run() {
         try (Selector selector = Selector.open()) {
-            while (!stopped || queue.size() > 0) {
+            while (!stopped || queue.size() > 0 || !selector.keys().isEmpty()) {
                 ScanContext poll;
                 boolean empty;
                 synchronized (queue) {
