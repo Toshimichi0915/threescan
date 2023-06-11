@@ -13,9 +13,6 @@ on:
   pull_request:
     branches: [ "master" ]
 
-permissions:
-  contents: read
-
 jobs:
   build:
 
@@ -28,10 +25,12 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-    - name: Build with Gradle 
-      run: ./gradlew build 
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    - name: Build with Gradle
+      run: ./gradlew build
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v2 
-      with: 
+      uses: actions/upload-artifact@v2
+      with:
         name: artifact
         path: build/libs/*.jar
