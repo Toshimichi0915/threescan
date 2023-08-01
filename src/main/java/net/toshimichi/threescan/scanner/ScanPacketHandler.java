@@ -143,6 +143,7 @@ public class ScanPacketHandler implements PacketHandler {
             List<String> mods = new ArrayList<>();
             if (forgeData != null) {
                 JsonElement compact = forgeData.get("d");
+                JsonElement legacy = forgeData.get("mods");
                 if (compact != null) {
                     String d = forgeData.get("d").getAsString();
                     ByteBuffer buf = decodeForgeMessage(d);
@@ -164,12 +165,10 @@ public class ScanPacketHandler implements PacketHandler {
                         }
                         mods.add(modId + " " + modVersion);
                     }
-                }
-
-                JsonElement legacy = forgeData.get("mods");
-                if (legacy != null) {
+                } else if (legacy != null) {
                     for (JsonElement element : legacy.getAsJsonArray()) {
-                        mods.add(element.getAsString());
+                        JsonObject mod = element.getAsJsonObject();
+                        mods.add(mod.get("modId").getAsString() + " " + mod.get("modmarker").getAsString());
                     }
                 }
             }
