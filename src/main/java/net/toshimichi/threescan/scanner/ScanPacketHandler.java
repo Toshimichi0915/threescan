@@ -225,7 +225,6 @@ public class ScanPacketHandler implements PacketHandler {
                 if (packet.getReason().contains("IP forwarding")) {
                     result.setServerType(ServerType.BUNGEECORD);
                 } else if (packet.getReason().contains("Forge")) {
-                    System.out.println(packet.getReason());
                     result.setServerType(ServerType.MODDED);
                 } else if (packet.getReason().contains("whitelisted")) {
                     result.setServerType(ServerType.WHITELISTED);
