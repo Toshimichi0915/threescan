@@ -35,48 +35,6 @@ public class ScanPacketHandler implements PacketHandler {
 
     private final Gson gson = new Gson();
 
-    public String parseComponent(JsonArray array) {
-        StringBuilder builder = new StringBuilder();
-        for (JsonElement element : array) {
-            builder.append(element.getAsJsonObject().get("text").getAsString());
-        }
-        return builder.toString();
-    }
-
-    // https://github.com/MinecraftForge/MinecraftForge/blob/f65381fbffd10285a05a46ee101fe75256de542e/src/main/java/net/minecraftforge/network/ServerStatusPing.java#L307
-    private static ByteBuffer decodeForgeMessage(String s) {
-        var size0 = ((int) s.charAt(0));
-        var size1 = ((int) s.charAt(1));
-        var size = size0 | (size1 << 15);
-
-        var buf = ByteBuffer.allocate(size);
-
-        int stringIndex = 2;
-        int buffer = 0; // we will need at most 8 + 14 = 22 bits of buffer, so an int is enough
-        int bitsInBuf = 0;
-        while (stringIndex < s.length()) {
-            while (bitsInBuf >= 8) {
-                buf.put((byte) buffer);
-                buffer >>>= 8;
-                bitsInBuf -= 8;
-            }
-
-            var c = s.charAt(stringIndex);
-            buffer |= (((int) c) & 0x7FFF) << bitsInBuf;
-            bitsInBuf += 15;
-            stringIndex++;
-        }
-
-        // write any leftovers
-        while (buf.remaining() > 0) {
-            buf.put((byte) buffer);
-            buffer >>>= 8;
-            bitsInBuf -= 8;
-        }
-
-        return buf;
-    }
-
     @Override
     public void onConnected(ScanContext context) throws IOException {
         ScanTarget target = context.getScanTarget();
@@ -125,6 +83,48 @@ public class ScanPacketHandler implements PacketHandler {
                 throw new RuntimeException("Unknown state: " + state);
             }
         }
+    }
+
+    public String parseComponent(JsonArray array) {
+        StringBuilder builder = new StringBuilder();
+        for (JsonElement element : array) {
+            builder.append(element.getAsJsonObject().get("text").getAsString());
+        }
+        return builder.toString();
+    }
+
+    // https://github.com/MinecraftForge/MinecraftForge/blob/f65381fbffd10285a05a46ee101fe75256de542e/src/main/java/net/minecraftforge/network/ServerStatusPing.java#L307
+    private static ByteBuffer decodeForgeMessage(String s) {
+        var size0 = ((int) s.charAt(0));
+        var size1 = ((int) s.charAt(1));
+        var size = size0 | (size1 << 15);
+
+        var buf = ByteBuffer.allocate(size);
+
+        int stringIndex = 2;
+        int buffer = 0; // we will need at most 8 + 14 = 22 bits of buffer, so an int is enough
+        int bitsInBuf = 0;
+        while (stringIndex < s.length()) {
+            while (bitsInBuf >= 8) {
+                buf.put((byte) buffer);
+                buffer >>>= 8;
+                bitsInBuf -= 8;
+            }
+
+            var c = s.charAt(stringIndex);
+            buffer |= (((int) c) & 0x7FFF) << bitsInBuf;
+            bitsInBuf += 15;
+            stringIndex++;
+        }
+
+        // write any leftovers
+        while (buf.remaining() > 0) {
+            buf.put((byte) buffer);
+            buffer >>>= 8;
+            bitsInBuf -= 8;
+        }
+
+        return buf;
     }
 
     public void parseStatus(ScanContext context, S2CStatusPacket packet) throws IOException {
