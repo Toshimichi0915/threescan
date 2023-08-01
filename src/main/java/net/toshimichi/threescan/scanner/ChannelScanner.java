@@ -73,7 +73,8 @@ public class ChannelScanner implements Scanner, Runnable {
     @Override
     public void run() {
         try (Selector selector = Selector.open()) {
-            while (!stopped || queue.size() > 0 || !selector.keys().isEmpty()) {
+            boolean hasKeys = false;
+            while (!stopped || queue.size() > 0 || hasKeys) {
                 ScanContext poll;
                 boolean empty;
                 synchronized (queue) {
@@ -99,6 +100,8 @@ public class ChannelScanner implements Scanner, Runnable {
                 }
 
                 selector.selectNow();
+                hasKeys = selector.selectedKeys().size() > 0;
+                
                 Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
                 while (iter.hasNext()) {
                     SelectionKey key = iter.next();
