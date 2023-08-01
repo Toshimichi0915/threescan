@@ -168,7 +168,10 @@ public class ScanPacketHandler implements PacketHandler {
                 } else if (legacy != null) {
                     for (JsonElement element : legacy.getAsJsonArray()) {
                         JsonObject mod = element.getAsJsonObject();
-                        mods.add(mod.get("modId").getAsString() + " " + mod.get("modmarker").getAsString());
+                        String modId = mod.get("modId").getAsString();
+                        String modVersion = mod.get("modmarker").getAsString();
+                        if (modVersion.startsWith("OHNOES")) modVersion = "UNKNOWN";
+                        mods.add(modId + " " + modVersion);
                     }
                 }
             }
