@@ -64,11 +64,12 @@ public class Protocol {
     }
 
     public static int getUnsignedShort(ByteBuffer buf) throws IOException {
-        return buf.getShort() - Short.MIN_VALUE;
+        // convert unsigned short to int
+        return buf.getShort() & 0xFFFF;
     }
 
     public static void putUnsignedShort(ByteBuffer buf, int value) throws IOException {
-        buf.putShort((short) (value + Short.MIN_VALUE));
+        buf.putShort((short) (value & 0xFFFF));
     }
 
     public static UUID getUUID(ByteBuffer buf) throws IOException {

@@ -13,12 +13,15 @@ import net.toshimichi.threescan.packet.C2S761LoginPacket;
 import net.toshimichi.threescan.packet.C2SHandshakePacket;
 import net.toshimichi.threescan.packet.C2SLoginPacket;
 import net.toshimichi.threescan.packet.C2SStatusPacket;
+import net.toshimichi.threescan.packet.Protocol;
 import net.toshimichi.threescan.packet.S2CLoginDisconnectPacket;
 import net.toshimichi.threescan.packet.S2CLoginPluginRequestPacket;
 import net.toshimichi.threescan.packet.S2CStatusPacket;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -31,6 +34,48 @@ public class ScanPacketHandler implements PacketHandler {
     private final UUID uniqueId;
 
     private final Gson gson = new Gson();
+
+    public String parseComponent(JsonArray array) {
+        StringBuilder builder = new StringBuilder();
+        for (JsonElement element : array) {
+            builder.append(element.getAsJsonObject().get("text").getAsString());
+        }
+        return builder.toString();
+    }
+
+    // https://github.com/MinecraftForge/MinecraftForge/blob/f65381fbffd10285a05a46ee101fe75256de542e/src/main/java/net/minecraftforge/network/ServerStatusPing.java#L307
+    private static ByteBuffer decodeForgeMessage(String s) {
+        var size0 = ((int) s.charAt(0));
+        var size1 = ((int) s.charAt(1));
+        var size = size0 | (size1 << 15);
+
+        var buf = ByteBuffer.allocate(size);
+
+        int stringIndex = 2;
+        int buffer = 0; // we will need at most 8 + 14 = 22 bits of buffer, so an int is enough
+        int bitsInBuf = 0;
+        while (stringIndex < s.length()) {
+            while (bitsInBuf >= 8) {
+                buf.put((byte) buffer);
+                buffer >>>= 8;
+                bitsInBuf -= 8;
+            }
+
+            var c = s.charAt(stringIndex);
+            buffer |= (((int) c) & 0x7FFF) << bitsInBuf;
+            bitsInBuf += 15;
+            stringIndex++;
+        }
+
+        // write any leftovers
+        while (buf.remaining() > 0) {
+            buf.put((byte) buffer);
+            buffer >>>= 8;
+            bitsInBuf -= 8;
+        }
+
+        return buf;
+    }
 
     @Override
     public void onConnected(ScanContext context) throws IOException {
@@ -82,24 +127,53 @@ public class ScanPacketHandler implements PacketHandler {
         }
     }
 
-    public String parseComponent(JsonArray array) {
-        StringBuilder builder = new StringBuilder();
-        for (JsonElement element : array) {
-            builder.append(element.getAsJsonObject().get("text").getAsString());
-        }
-        return builder.toString();
-    }
-
     public void parseStatus(ScanContext context, S2CStatusPacket packet) throws IOException {
         ScanTarget target = context.getScanTarget();
         ScanResult result = context.getScanResult();
 
         try {
             JsonObject obj = gson.fromJson(packet.getMessage(), JsonObject.class);
+
             result.setVersion(obj.getAsJsonObject("version").get("name").getAsString());
             result.setProtocol(obj.getAsJsonObject("version").get("protocol").getAsInt());
             result.setPlayerCount(obj.getAsJsonObject("players").get("online").getAsInt());
             result.setMaxPlayerCount(obj.getAsJsonObject("players").get("max").getAsInt());
+
+            JsonObject forgeData = obj.getAsJsonObject("forgeData");
+            List<String> mods = new ArrayList<>();
+            if (forgeData != null) {
+                JsonElement compact = forgeData.get("d");
+                if (compact != null) {
+                    String d = forgeData.get("d").getAsString();
+                    ByteBuffer buf = decodeForgeMessage(d);
+                    buf.flip();
+
+                    Protocol.getBoolean(buf); // truncated
+                    int modCount = Protocol.getUnsignedShort(buf);
+
+                    for (int i = 0; i < modCount; i++) {
+                        int flags = Protocol.getVarInt(buf); // channel size & version flag
+                        int channelCount = flags >>> 1;
+                        boolean serverOnly = (flags & 0b1) != 0;
+                        String modId = Protocol.getString(buf);
+                        String modVersion = serverOnly ? "UNKNOWN" : Protocol.getString(buf);
+                        for (int j = 0; j < channelCount; j++) {
+                            Protocol.getString(buf); // channel name
+                            Protocol.getString(buf); // channel version
+                            Protocol.getBoolean(buf); // required on client
+                        }
+                        mods.add(modId + " " + modVersion);
+                    }
+                }
+
+                JsonElement legacy = forgeData.get("mods");
+                if (legacy != null) {
+                    for (JsonElement element : legacy.getAsJsonArray()) {
+                        mods.add(element.getAsString());
+                    }
+                }
+            }
+            result.setMods(mods);
 
             result.setOnlinePlayers(new ArrayList<>());
             JsonArray sample = obj.getAsJsonObject("players").getAsJsonArray("sample");
@@ -121,6 +195,7 @@ public class ScanPacketHandler implements PacketHandler {
                 result.setDescription(description.getAsString());
             }
         } catch (Exception e) {
+            e.printStackTrace();
             throw new InvalidStatusException("Failed to parse server status: " + e.getMessage() + " while scanning " + target.getHost() + ":" + target.getPort());
         }
 
@@ -150,6 +225,7 @@ public class ScanPacketHandler implements PacketHandler {
                 if (packet.getReason().contains("IP forwarding")) {
                     result.setServerType(ServerType.BUNGEECORD);
                 } else if (packet.getReason().contains("Forge")) {
+                    System.out.println(packet.getReason());
                     result.setServerType(ServerType.MODDED);
                 } else if (packet.getReason().contains("whitelisted")) {
                     result.setServerType(ServerType.WHITELISTED);

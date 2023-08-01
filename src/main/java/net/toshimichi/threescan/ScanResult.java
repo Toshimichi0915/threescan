@@ -13,6 +13,7 @@ public class ScanResult {
     private int playerCount;
     private int maxPlayerCount;
     private List<String> onlinePlayers;
+    private List<String> mods;
     private String description;
     private ServerType serverType = ServerType.UNKNOWN;
 }
