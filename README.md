@@ -17,6 +17,22 @@ where
 * name - the name of a player (used to determine server type)
 * uniqueId - the uniqueId of a player (used to determine server type)
 
+**It is highly encouraged to use this program with masscan on Linux for better performance.**
+
+It is known that this program may cause some issues on Windows.
+
+In order to use this program with masscan, you can use the following command:
+
+```bash
+masscan -c masscan.conf 2>/dev/null | java -jar threescan.jar masscan stdin 5000 250 <username> <uuid> > output.txt 2>error.txt
+```
+
+where
+
+* masscan.conf - the configuration file of masscan
+* username - the name of a player (which will be shown to scanned hosts)
+* uuid - the uniqueId of a player (specify a UUID that matches to the username from https://namemc.com)
+
 ## Features
 
 * zero memory copy
