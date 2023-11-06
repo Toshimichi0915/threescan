@@ -74,7 +74,7 @@ public class ChannelScanner implements Scanner, Runnable {
     public void run() {
         try (Selector selector = Selector.open()) {
             boolean hasKeys = false;
-            while (!stopped || queue.size() > 0 || hasKeys) {
+            while (!stopped || !queue.isEmpty() || hasKeys) {
                 ScanContext poll;
                 boolean empty;
                 synchronized (queue) {
@@ -100,8 +100,8 @@ public class ChannelScanner implements Scanner, Runnable {
                 }
 
                 selector.selectNow();
-                hasKeys = selector.selectedKeys().size() > 0;
-                
+                hasKeys = !selector.selectedKeys().isEmpty();
+
                 Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
                 while (iter.hasNext()) {
                     SelectionKey key = iter.next();
@@ -122,8 +122,14 @@ public class ChannelScanner implements Scanner, Runnable {
                         }
 
                         if (key.isReadable()) {
-                            context.setReadMs(System.currentTimeMillis());
+                            int prevPos = context.getReadBuffer().position();
                             PacketData buf = context.readPacket();
+
+                            int pos = context.getReadBuffer().position();
+                            if (prevPos != pos) {
+                                context.setReadMs(System.currentTimeMillis());
+                            }
+
                             if (buf != null) {
                                 packetHandler.onPacketReceived(context, buf);
                                 context.getReadBuffer().clear();

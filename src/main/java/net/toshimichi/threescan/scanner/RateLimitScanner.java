@@ -51,7 +51,7 @@ public class RateLimitScanner implements Scanner, Runnable {
 
     @Override
     public void run() {
-        while (!stopped || queue.size() > 0) {
+        while (!stopped || !queue.isEmpty()) {
             long currentMs = System.currentTimeMillis();
             if (queue.isEmpty()) {
                 lastMs = currentMs;

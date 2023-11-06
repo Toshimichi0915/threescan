@@ -24,7 +24,7 @@ It is known that this program may cause some issues on Windows.
 In order to use this program with masscan, you can use the following command:
 
 ```bash
-masscan -c masscan.conf 2>/dev/null | java -jar threescan.jar masscan stdin 5000 250 <username> <uuid> > output.txt 2>error.txt
+masscan -c masscan.conf 2>/dev/null | java -jar threescan.jar masscan stdin 200 2000 <username> <uuid> > output.txt 2>error.txt
 ```
 
 where

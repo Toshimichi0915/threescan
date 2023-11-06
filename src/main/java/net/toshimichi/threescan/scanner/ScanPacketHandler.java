@@ -10,6 +10,7 @@ import net.toshimichi.threescan.ScanResult;
 import net.toshimichi.threescan.packet.C2S759LoginPacket;
 import net.toshimichi.threescan.packet.C2S760LoginPacket;
 import net.toshimichi.threescan.packet.C2S761LoginPacket;
+import net.toshimichi.threescan.packet.C2S764LoginPacket;
 import net.toshimichi.threescan.packet.C2SHandshakePacket;
 import net.toshimichi.threescan.packet.C2SLoginPacket;
 import net.toshimichi.threescan.packet.C2SStatusPacket;
@@ -47,7 +48,9 @@ public class ScanPacketHandler implements PacketHandler {
             case LOGIN -> {
                 int protocol = context.getScanResult().getProtocol();
                 context.writePacket(new C2SHandshakePacket(protocol, target.getHost(), target.getPort(), state.getId()));
-                if (protocol >= 761) {
+                if (protocol >= 764) {
+                    context.writePacket(new C2S764LoginPacket(name, uniqueId));
+                } else if (protocol >= 761) {
                     context.writePacket(new C2S761LoginPacket(name, uniqueId));
                 } else if (protocol == 760) {
                     context.writePacket(new C2S760LoginPacket(name, uniqueId));
