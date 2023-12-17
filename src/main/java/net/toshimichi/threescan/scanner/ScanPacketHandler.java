@@ -200,7 +200,6 @@ public class ScanPacketHandler implements PacketHandler {
                 result.setDescription(description.getAsString());
             }
         } catch (Exception e) {
-            e.printStackTrace();
             throw new InvalidStatusException("Failed to parse server status: " + e.getMessage() + " while scanning " + target.getHost() + ":" + target.getPort());
         }
 
