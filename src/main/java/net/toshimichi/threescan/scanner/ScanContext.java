@@ -63,7 +63,7 @@ public class ScanContext {
 
         if (readBuffer.position() - idPosition >= packetSize) {
             reading = false;
-            return new PacketData(packetId, readBuffer.slice(dataPosition, readBuffer.position()));
+            return new PacketData(packetId, readBuffer.slice(dataPosition, packetSize));
         }
 
         return null;
