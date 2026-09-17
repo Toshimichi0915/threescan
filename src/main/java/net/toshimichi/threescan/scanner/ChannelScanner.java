@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -83,6 +84,7 @@ public class ChannelScanner implements Scanner, Runnable {
                         ScanTarget target = poll.getScanTarget();
                         SocketChannel channel = SocketChannel.open();
                         channel.configureBlocking(false);
+                        channel.setOption(StandardSocketOptions.SO_LINGER, 0);
                         channel.connect(new InetSocketAddress(target.getHost(), target.getPort()));
 
                         SelectionKey key = channel.register(selector, SelectionKey.OP_CONNECT, poll);
