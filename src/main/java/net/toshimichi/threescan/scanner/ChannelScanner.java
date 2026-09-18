@@ -10,11 +10,15 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayDeque;
 import java.util.Iterator;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @RequiredArgsConstructor
 public class ChannelScanner implements Scanner, Runnable {
+
+    private static final int SELECT_TIMEOUT_MS = 10;
+    private static final int SWEEP_INTERVAL_MS = 50;
 
     private final int connectionTimeout;
     private final int readTimeout;
@@ -23,28 +27,32 @@ public class ChannelScanner implements Scanner, Runnable {
     private final BufferPool readBufferPool = new BufferPool(16384);
     private final BufferPool writeBufferPool = new BufferPool(1024);
     private final BufferPool tempBufferPool = new BufferPool(16);
-    private final ArrayDeque<ScanContext> queue = new ArrayDeque<>();
+
+    private final Queue<ScanContext> queue = new ConcurrentLinkedQueue<>();
+    private final Selector selector = openSelector();
 
     private Thread thread;
-    private boolean stopped;
+    private long lastSweepMs;
+    private volatile boolean stopped;
+
+    @SneakyThrows
+    private static Selector openSelector() {
+        return Selector.open();
+    }
 
     @Override
     public void scan(ScanTarget target) {
         ByteBuffer readBuffer = readBufferPool.get();
         ByteBuffer writeBuffer = writeBufferPool.get();
         ByteBuffer tempBuffer = tempBufferPool.get();
-        ScanContext context = new ScanContext(this, readBuffer, writeBuffer, tempBuffer, target);
 
-        synchronized (queue) {
-            queue.add(context);
-        }
+        scan(new ScanContext(this, readBuffer, writeBuffer, tempBuffer, target));
     }
 
     @Override
     public void scan(ScanContext context) {
-        synchronized (queue) {
-            queue.add(context);
-        }
+        queue.add(context);
+        selector.wakeup();
     }
 
     @Override
@@ -57,6 +65,7 @@ public class ChannelScanner implements Scanner, Runnable {
     @Override
     public void stop() throws InterruptedException {
         stopped = true;
+        selector.wakeup();
         thread.join();
     }
 
@@ -73,36 +82,23 @@ public class ChannelScanner implements Scanner, Runnable {
     @SneakyThrows
     @Override
     public void run() {
-        try (Selector selector = Selector.open()) {
-            boolean hasKeys = false;
-            while (!stopped || !queue.isEmpty() || hasKeys) {
+        try {
+            while (!stopped || !queue.isEmpty() || !selector.keys().isEmpty()) {
                 ScanContext poll;
-                boolean empty;
-                synchronized (queue) {
-                    empty = queue.isEmpty();
-                    while ((poll = queue.poll()) != null) {
-                        ScanTarget target = poll.getScanTarget();
-                        SocketChannel channel = SocketChannel.open();
-                        channel.configureBlocking(false);
-                        channel.setOption(StandardSocketOptions.SO_LINGER, 0);
-                        channel.connect(new InetSocketAddress(target.getHost(), target.getPort()));
+                while ((poll = queue.poll()) != null) {
+                    ScanTarget target = poll.getScanTarget();
+                    SocketChannel channel = SocketChannel.open();
+                    channel.configureBlocking(false);
+                    channel.setOption(StandardSocketOptions.SO_LINGER, 0);
+                    channel.setOption(StandardSocketOptions.TCP_NODELAY, true);
+                    channel.connect(new InetSocketAddress(target.getHost(), target.getPort()));
 
-                        SelectionKey key = channel.register(selector, SelectionKey.OP_CONNECT, poll);
-                        poll.setSelectionKey(key);
-                        poll.setStartMs(System.currentTimeMillis());
-                    }
+                    SelectionKey key = channel.register(selector, SelectionKey.OP_CONNECT, poll);
+                    poll.setSelectionKey(key);
+                    poll.setStartMs(System.currentTimeMillis());
                 }
 
-                if (empty) {
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                }
-
-                selector.selectNow();
-                hasKeys = !selector.selectedKeys().isEmpty();
+                selector.select(SELECT_TIMEOUT_MS);
 
                 Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
                 while (iter.hasNext()) {
@@ -154,25 +150,26 @@ public class ChannelScanner implements Scanner, Runnable {
                     }
                 }
 
-                // timeout
+                long now = System.currentTimeMillis();
+                if (now - lastSweepMs < SWEEP_INTERVAL_MS) continue;
+                lastSweepMs = now;
+
                 for (SelectionKey key : selector.keys()) {
                     ScanContext context = (ScanContext) key.attachment();
-                    boolean timeout = false;
-                    if (context.isConnected()) {
-                        if (System.currentTimeMillis() - context.getReadMs() > readTimeout) {
-                            timeout = true;
-                        }
-                    } else {
-                        if (System.currentTimeMillis() - context.getStartMs() > connectionTimeout) {
-                            timeout = true;
-                        }
-                    }
 
-                    if (timeout) {
+                    if (context.isCancelled() || !key.isValid()) continue;
+
+                    long deadline = context.isConnected()
+                            ? context.getReadMs() + readTimeout
+                            : context.getStartMs() + connectionTimeout;
+
+                    if (now > deadline) {
                         cancel(context, false);
                     }
                 }
             }
+        } finally {
+            selector.close();
         }
     }
 }

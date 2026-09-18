@@ -11,7 +11,7 @@ public class BufferPool {
     private final ArrayDeque<ByteBuffer> buffers = new ArrayDeque<>();
     private final int bufferSize;
 
-    public ByteBuffer get() {
+    public synchronized ByteBuffer get() {
         ByteBuffer buffer = buffers.poll();
         if (buffer == null) {
             buffer = ByteBuffer.allocateDirect(bufferSize);
@@ -19,7 +19,7 @@ public class BufferPool {
         return buffer;
     }
 
-    public void release(ByteBuffer buffer) {
+    public synchronized void release(ByteBuffer buffer) {
         buffer.clear();
         buffers.add(buffer);
     }

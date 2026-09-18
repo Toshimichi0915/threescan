@@ -1,8 +1,10 @@
 package net.toshimichi.threescan.scanner;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 
-import java.util.ArrayDeque;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 @RequiredArgsConstructor
 public class RateLimitScanner implements Scanner, Runnable {
@@ -10,25 +12,23 @@ public class RateLimitScanner implements Scanner, Runnable {
     private final double scanPerMs;
     private final Scanner scanner;
 
-    private final ArrayDeque<Object> queue = new ArrayDeque<>();
+    private final BlockingQueue<Object> queue = new ArrayBlockingQueue<>(10_000);
 
     private Thread thread;
     private double limit;
     private long lastMs;
-    private boolean stopped;
+    private volatile boolean stopped;
 
+    @SneakyThrows
     @Override
     public void scan(ScanTarget target) {
-        synchronized (queue) {
-            queue.add(target);
-        }
+        queue.put(target);
     }
 
+    @SneakyThrows
     @Override
     public void scan(ScanContext context) {
-        synchronized (queue) {
-            queue.add(context);
-        }
+        queue.put(context);
     }
 
     @Override
@@ -68,10 +68,7 @@ public class RateLimitScanner implements Scanner, Runnable {
             lastMs = currentMs;
 
             while (limit > 0) {
-                Object o;
-                synchronized (queue) {
-                    o = queue.poll();
-                }
+                Object o = queue.poll();
                 if (o == null) {
                     break;
                 } else if (o instanceof ScanTarget target) {
